@@ -9,7 +9,7 @@ import tensorflow as tf
 
 import numpy as np
 import time
-
+from physics_engine import gen
 FLAGS = None
 
 def m(O,Rr,Rs,Ra):
@@ -65,20 +65,6 @@ def phi_A(P):
   return(h1);
   
 def train():
-  """
-  # Object Matrix
-  O=np.zeros((FLAGS.Ds,FLAGS.No),dtype=float);
-  # Relation Matrics R=<Rr,Rs,Ra>
-  R=np.zeros(3,dtype=object);
-  R[0]=np.zeros((FLAGS.No,FLAGS.Nr),dtype=float);
-  R[1]=np.zeros((FLAGS.No,FLAGS.Nr),dtype=float);
-  R[2]=np.zeros((FLAGS.Dr,FLAGS.Nr),dtype=float);
-  # External Effects
-  X=np.zeros((FLAGS.Dx,FLAGS.No),dtype=float);
-  
-  # marshalling function, m(G)=B, G=<O,R>  
-  B=m(O,R);
-  """
 
   # Object Matrix
   O = tf.placeholder(tf.float32, [FLAGS.Ds,FLAGS.No], name="O");
@@ -86,6 +72,8 @@ def train():
   Rr = tf.placeholder(tf.float32, [FLAGS.No,FLAGS.Nr], name="Rr");
   Rs = tf.placeholder(tf.float32, [FLAGS.No,FLAGS.Nr], name="Rs");
   Ra = tf.placeholder(tf.float32, [FLAGS.Dr,FLAGS.Nr], name="Ra");
+  # next velocities
+  P_label = tf.placeholder(tf.float32, [FLAGS.Dp,FLAGS.No], name="P_label");
   # External Effects
   X = tf.placeholder(tf.float32, [FLAGS.Dx,FLAGS.No], name="X");
    
@@ -102,9 +90,54 @@ def train():
   P=phi_O(C);
   
   # abstract modeling phi_A(P)=q
-  q=phi_A(P);
-  print(q);exit(1);
+  #q=phi_A(P);
 
+  loss = tf.reduce_mean(P-P_label);
+  optimizer = tf.train.AdamOptimizer(0.001);
+  trainer=optimizer.minimize(loss);
+
+  sess=tf.InteractiveSession();
+  tf.global_variables_initializer().run();
+
+  # Data Generation
+  set_num=1;
+  total_data=np.zeros((999*set_num,2),dtype=object);
+  for i in range(set_num):
+    raw_data=gen(FLAGS.No,False);
+    data=np.zeros((999,2),dtype=object);
+    for j in range(1000-1):
+      data[j][0]=raw_data[j];data[j][1]=raw_data[j,:,3:5];
+    total_data[i*999:(i+1)*999,:]=data;
+
+  # Shuffle
+  tr_data_num=400;
+  val_data_num=300;
+  total_idx=range(len(total_data));np.random.shuffle(total_idx);
+  mixed_data=total_data[total_idx];
+  # Training/Validation/Test
+  train_data=mixed_data[:tr_data_num];
+  val_data=mixed_data[tr_data_num:tr_data_num+val_data_num];
+  test_data=mixed_data[tr_data_num+val_data_num:];
+ 
+  # Set Rr_data, Rs_data and Ra_data\
+  Rr_data=np.zeros((FLAGS.No,FLAGS.Nr),dtype=float);
+  Rs_data=np.zeros((FLAGS.No,FLAGS.Nr),dtype=float);
+  Ra_data=np.zeros((FLAGS.Dr,FLAGS.Nr),dtype=float); 
+  cnt=0;
+  for i in range(FLAGS.No):
+    for j in range(FLAGS.No):
+      if(i!=j):
+        Rr_data[i,cnt]=1.0;
+        Rs_data[j,cnt]=1.0;
+        cnt+=1;
+  # Training
+  mini_batch_num=100;
+  for i in range(2000):
+    for j in range(int(len(train_data)/mini_batch_num)):
+      batch_data=train_data[j*mini_batch_num:(j+1)*mini_batch_num,0];
+      batch_label=train_data[j*mini_batch_num:(j+1)*mini_batch_num,1];
+      sess.run(trainer,feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label});
+      
 def main(_):
   FLAGS.log_dir+=str(int(time.time()));
   if tf.gfile.Exists(FLAGS.log_dir):
@@ -118,14 +151,14 @@ if __name__ == '__main__':
   parser.add_argument('--log_dir', type=str, default='/tmp/interaction-network/',
                       help='Summaries log directry')
   parser.add_argument('--Ds', type=int, default=5,
-                      help='The Number of State')
-  parser.add_argument('--No', type=int, default=5,
+                      help='The State Dimention')
+  parser.add_argument('--No', type=int, default=6,
                       help='The Number of Objects')
-  parser.add_argument('--Nr', type=int, default=5,
+  parser.add_argument('--Nr', type=int, default=30,
                       help='The Number of Relations')
-  parser.add_argument('--Dr', type=int, default=5,
+  parser.add_argument('--Dr', type=int, default=1,
                       help='The Relationship Dimension')
-  parser.add_argument('--Dx', type=int, default=3,
+  parser.add_argument('--Dx', type=int, default=1,
                       help='The External Effect Dimension')
   parser.add_argument('--De', type=int, default=50,
                       help='The Effect Dimension')

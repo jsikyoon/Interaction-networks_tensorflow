@@ -4,20 +4,24 @@ from __future__ import print_function
 
 import argparse
 import sys
-
+import os
 import numpy as np
 import time
 from math import sin, cos, radians, pi
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import matplotlib.animation as manimation
+import cv2
 
-# 1000 one-millisecond time steps
+# 1000 time steps
 total_state=1000;
 # 5 features on the state [mass,x,y,x_vel,y_vel]
 fea_num=5;
 # G 
-#G = 6.67428e-11;
-G=10;
+G = 6.67428e-11;
 # time step
-diff_t=0.000001;
+diff_t=0.001;
 
 def init(total_state,n_body,fea_num,orbit):
   data=np.zeros((total_state,n_body,fea_num),dtype=float);
@@ -35,9 +39,12 @@ def init(total_state,n_body,fea_num,orbit):
       data[0][i][4]=np.random.rand()*6.0-3.0;
   return data;      
 
+def norm(x):
+  return np.sqrt(np.sum(x**2));
+
 def get_f(reciever,sender):
-  diff=reciever[1:3]-sender[1:3];
-  return G*reciever[0]*sender[0]*diff/(np.linalg.norm(diff)**3);
+  diff=sender[1:3]-reciever[1:3];
+  return G*reciever[0]*sender[0]/(norm(diff)**3)*diff;
  
 def calc(cur_state,n_body):
   next_state=np.zeros((n_body,fea_num),dtype=float);
@@ -47,9 +54,10 @@ def calc(cur_state,n_body):
   for i in range(n_body):
     for j in range(i+1,n_body):
       if(j!=i):
-        f_mat[i,j]+=get_f(cur_state[i][:3],cur_state[j][:3]);  
-    f_mat[j,i]-=f_mat[i,j];  
-    f_sum[i]=np.sum(f_mat[i,:]); 
+        f=get_f(cur_state[i][:3],cur_state[j][:3]);  
+        f_mat[i,j]+=f;
+        f_mat[j,i]-=f;  
+    f_sum[i]=np.sum(f_mat[i],axis=0); 
     acc[i]=f_sum[i]/cur_state[i][0];
     next_state[i][0]=cur_state[i][0];
     next_state[i][3:5]=cur_state[i][3:5]+acc[i]*diff_t;
@@ -63,5 +71,24 @@ def gen(n_body,orbit):
     data[i]=calc(data[i-1],n_body);
   return data;
 
+def make_video(xy):
+  os.system("rm -rf pics/*");
+  FFMpegWriter = manimation.writers['ffmpeg']
+  metadata = dict(title='Movie Test', artist='Matplotlib',
+                  comment='Movie support!')
+  writer = FFMpegWriter(fps=15, metadata=metadata)
+  fig = plt.figure()
+  plt.xlim(-1000, 1000)
+  plt.ylim(-1000, 1000)
+  fig_num=len(xy);
+  color=['ro','bo','go','ko','yo','mo','co'];
+  with writer.saving(fig, "video.mp4", len(xy)):
+    for i in range(len(xy)):
+      for j in range(len(xy[0])):
+        plt.plot(xy[i,j,1],xy[i,j,0],color[j%len(color)]);
+      writer.grab_frame();
+
 if __name__=='__main__':
-  gen(3,False);
+  data=gen(6,False);
+  xy=data[:,:,1:3];
+  make_video(xy);

@@ -1,2 +1,1 @@
-###Tensorflow Implementation of Interaction Networks
-----
+##Tensorflow Implementation of Interaction Networks
