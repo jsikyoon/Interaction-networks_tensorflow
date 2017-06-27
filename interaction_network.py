@@ -96,7 +96,11 @@ def train():
   # abstract modeling phi_A(P)=q
   #q=phi_A(P);
 
-  loss = tf.reduce_mean(P-P_label);
+  # loss and optimizer
+  params_list=tf.global_variables();
+  loss = tf.nn.l2_loss(P-P_label)+0.001*tf.nn.l2_loss(E);
+  for i in params_list:
+    loss+=0.001*tf.nn.l2_loss(i);
   optimizer = tf.train.AdamOptimizer(0.001);
   trainer=optimizer.minimize(loss);
 
@@ -150,6 +154,12 @@ def train():
       batch_data=train_data[j*mini_batch_num:(j+1)*mini_batch_num];
       batch_label=train_label[j*mini_batch_num:(j+1)*mini_batch_num];
       sess.run(trainer,feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
+    val_loss=0;
+    for j in range(int(len(val_data)/mini_batch_num)):
+      batch_data=val_data[j*mini_batch_num:(j+1)*mini_batch_num];
+      batch_label=val_label[j*mini_batch_num:(j+1)*mini_batch_num];
+      val_loss+=sess.run(loss,feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
+    print("Epoch "+str(i+1)+" Validation MSE: "+str(val_loss/(j+1)));
       
 def main(_):
   FLAGS.log_dir+=str(int(time.time()));
