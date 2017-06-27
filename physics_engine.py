@@ -90,5 +90,5 @@ def make_video(xy):
 
 if __name__=='__main__':
   data=gen(6,False);
-  xy=data[:,:,1:3];
-  make_video(xy);
+  #xy=data[:,:,1:3];
+  #make_video(xy);
