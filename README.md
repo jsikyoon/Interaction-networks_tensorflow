@@ -16,7 +16,7 @@ From the paper
 
 ![alt tag](https://github.com/jaesik817/Interaction-networks_tensorflow/blob/master/figures/interaction_net.PNG)
 
-![alt tag](https://github.com/jaesik817/Interaction-networks_tensorflow/blob/master/figures/interaction_neti_2.PNG)
+![alt tag](https://github.com/jaesik817/Interaction-networks_tensorflow/blob/master/figures/interaction_net_2.PNG)
 
 N-body Simulation
 --------------------
