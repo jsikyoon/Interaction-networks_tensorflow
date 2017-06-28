@@ -108,7 +108,7 @@ def train():
   tf.global_variables_initializer().run();
 
   # Data Generation
-  set_num=1;
+  set_num=2000;
   total_data=np.zeros((999*set_num,FLAGS.Ds,FLAGS.No),dtype=object);
   total_label=np.zeros((999*set_num,FLAGS.Dp,FLAGS.No),dtype=object);
   for i in range(set_num):
@@ -121,8 +121,8 @@ def train():
     total_label[i*999:(i+1)*999,:]=label;
 
   # Shuffle
-  tr_data_num=400;
-  val_data_num=300;
+  tr_data_num=1000000;
+  val_data_num=200000;
   total_idx=range(len(total_data));np.random.shuffle(total_idx);
   mixed_data=total_data[total_idx];
   mixed_label=total_label[total_idx];
