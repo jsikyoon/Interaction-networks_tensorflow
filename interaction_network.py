@@ -108,8 +108,7 @@ def train():
   tf.global_variables_initializer().run();
 
   # Data Generation
-  #set_num=2000;
-  set_num=1;
+  set_num=2000;
   total_data=np.zeros((999*set_num,FLAGS.Ds,FLAGS.No),dtype=object);
   total_label=np.zeros((999*set_num,FLAGS.Dp,FLAGS.No),dtype=object);
   for i in range(set_num):
@@ -122,10 +121,8 @@ def train():
     total_label[i*999:(i+1)*999,:]=label;
 
   # Shuffle
-  #tr_data_num=1000000;
-  #val_data_num=200000;
-  tr_data_num=400;
-  val_data_num=300;
+  tr_data_num=1000000;
+  val_data_num=200000;
   total_idx=range(len(total_data));np.random.shuffle(total_idx);
   mixed_data=total_data[total_idx];
   mixed_label=total_label[total_idx];
@@ -155,6 +152,14 @@ def train():
   train_data[:,1:3,:]=(train_data[:,1:3,:]-position_median)*(2/(position_max-position_min));
   train_data[:,3:5,:]=(train_data[:,3:5,:]-velocity_median)*(2/(velocity_max-velocity_min));
 
+  val_data[:,0,:]=(val_data[:,0,:]-weights_median)*(2/(weights_max-weights_min));
+  val_data[:,1:3,:]=(val_data[:,1:3,:]-position_median)*(2/(position_max-position_min));
+  val_data[:,3:5,:]=(val_data[:,3:5,:]-velocity_median)*(2/(velocity_max-velocity_min));
+  
+  test_data[:,0,:]=(test_data[:,0,:]-weights_median)*(2/(weights_max-weights_min));
+  test_data[:,1:3,:]=(test_data[:,1:3,:]-position_median)*(2/(position_max-position_min));
+  test_data[:,3:5,:]=(test_data[:,3:5,:]-velocity_median)*(2/(velocity_max-velocity_min));
+  
   mini_batch_num=100;
   # Set Rr_data, Rs_data, Ra_data and X_data
   Rr_data=np.zeros((mini_batch_num,FLAGS.No,FLAGS.Nr),dtype=float);
