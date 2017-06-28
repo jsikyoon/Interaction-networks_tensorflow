@@ -117,7 +117,7 @@ def train():
     data=np.zeros((999,FLAGS.Ds,FLAGS.No),dtype=object);
     label=np.zeros((999,FLAGS.Dp,FLAGS.No),dtype=object);
     for j in range(1000-1):
-      data[j]=np.transpose(raw_data[j]);label[j]=np.transpose(raw_data[j,:,3:5]);
+      data[j]=np.transpose(raw_data[j]);label[j]=np.transpose(raw_data[j+1,:,3:5]);
     total_data[i*999:(i+1)*999,:]=data;
     total_label[i*999:(i+1)*999,:]=label;
 
@@ -136,7 +136,25 @@ def train():
   val_label=mixed_label[tr_data_num:tr_data_num+val_data_num];
   test_data=mixed_data[tr_data_num+val_data_num:];
   test_label=mixed_label[tr_data_num+val_data_num:];
- 
+
+  # Normalization
+  weights_list=np.sort(np.reshape(train_data[:,0,:],[1,tr_data_num*FLAGS.No])[0]);
+  weights_median=weights_list[int(len(weights_list)*0.5)];
+  weights_min=weights_list[int(len(weights_list)*0.05)];
+  weights_max=weights_list[int(len(weights_list)*0.95)];
+  position_list=np.sort(np.reshape(train_data[:,1:3,:],[1,tr_data_num*FLAGS.No*2])[0]);
+  position_median=position_list[int(len(position_list)*0.5)];
+  position_min=position_list[int(len(position_list)*0.05)];
+  position_max=position_list[int(len(position_list)*0.95)];
+  velocity_list=np.sort(np.reshape(train_data[:,3:5,:],[1,tr_data_num*FLAGS.No*2])[0]);
+  velocity_median=velocity_list[int(len(velocity_list)*0.5)];
+  velocity_min=velocity_list[int(len(velocity_list)*0.05)];
+  velocity_max=velocity_list[int(len(velocity_list)*0.95)];
+
+  train_data[:,0,:]=(train_data[:,0,:]-weights_median)*(2/(weights_max-weights_min));
+  train_data[:,1:3,:]=(train_data[:,1:3,:]-position_median)*(2/(position_max-position_min));
+  train_data[:,3:5,:]=(train_data[:,3:5,:]-velocity_median)*(2/(velocity_max-velocity_min));
+
   mini_batch_num=100;
   # Set Rr_data, Rs_data, Ra_data and X_data
   Rr_data=np.zeros((mini_batch_num,FLAGS.No,FLAGS.Nr),dtype=float);
@@ -166,7 +184,7 @@ def train():
     print("Epoch "+str(i+1)+" Validation MSE: "+str(val_loss/(j+1)));
 
   # Make Video
-  frame_len=250;
+  frame_len=300;
   raw_data=gen(FLAGS.No,True);
   xy_origin=raw_data[:frame_len,:,1:3];
   estimated_data=np.zeros((frame_len,FLAGS.No,FLAGS.Ds),dtype=float);

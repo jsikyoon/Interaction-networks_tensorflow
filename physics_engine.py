@@ -82,7 +82,6 @@ def gen(n_body,orbit):
   data=init(total_state,n_body,fea_num,orbit);
   for i in range(1,total_state):
     data[i]=calc(data[i-1],n_body);
-    print(norm(data[i][0,1:3]-data[i][1,1:3]));
   return data;
 
 def make_video(xy,filename):
