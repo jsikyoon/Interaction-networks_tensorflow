@@ -19,14 +19,27 @@ total_state=1000;
 # 5 features on the state [mass,x,y,x_vel,y_vel]
 fea_num=5;
 # G 
-G = 6.67428e-11;
+#G = 6.67428e-11;
+G=10**5;
 # time step
 diff_t=0.001;
 
 def init(total_state,n_body,fea_num,orbit):
   data=np.zeros((total_state,n_body,fea_num),dtype=float);
   if(orbit):
-    print("Not yet");exit(1);
+    data[0][0][0]=100;
+    data[0][0][1:5]=0.0;
+    for i in range(1,n_body):
+      data[0][i][0]=np.random.rand()*8.98+0.02;
+      distance=np.random.rand()*90.0+10.0;
+      theta=np.random.rand()*360;
+      theta_rad = pi/2 - radians(theta);    
+      data[0][i][1]=distance*cos(theta_rad);
+      data[0][i][2]=distance*sin(theta_rad);
+      data[0][i][3]=-1*data[0][i][2]/norm(data[0][i][1:3])*(G*data[0][0][0]/distance**2)*0.05;
+      data[0][i][4]=data[0][i][1]/norm(data[0][i][1:3])*(G*data[0][0][0]/distance**2)*0.05;
+      #data[0][i][3]=np.random.rand()*10.0-5.0;
+      #data[0][i][4]=np.random.rand()*10.0-5.0;
   else:
     for i in range(n_body):
       data[0][i][0]=np.random.rand()*8.98+0.02;
@@ -69,26 +82,27 @@ def gen(n_body,orbit):
   data=init(total_state,n_body,fea_num,orbit);
   for i in range(1,total_state):
     data[i]=calc(data[i-1],n_body);
+    print(norm(data[i][0,1:3]-data[i][1,1:3]));
   return data;
 
-def make_video(xy):
+def make_video(xy,filename):
   os.system("rm -rf pics/*");
   FFMpegWriter = manimation.writers['ffmpeg']
   metadata = dict(title='Movie Test', artist='Matplotlib',
                   comment='Movie support!')
   writer = FFMpegWriter(fps=15, metadata=metadata)
   fig = plt.figure()
-  plt.xlim(-1000, 1000)
-  plt.ylim(-1000, 1000)
+  plt.xlim(-200, 200)
+  plt.ylim(-200, 200)
   fig_num=len(xy);
   color=['ro','bo','go','ko','yo','mo','co'];
-  with writer.saving(fig, "video.mp4", len(xy)):
+  with writer.saving(fig, filename, len(xy)):
     for i in range(len(xy)):
       for j in range(len(xy[0])):
         plt.plot(xy[i,j,1],xy[i,j,0],color[j%len(color)]);
       writer.grab_frame();
 
 if __name__=='__main__':
-  data=gen(6,False);
-  #xy=data[:,:,1:3];
-  #make_video(xy);
+  data=gen(6,True);
+  xy=data[:,:,1:3];
+  make_video(xy,"test.mp4");

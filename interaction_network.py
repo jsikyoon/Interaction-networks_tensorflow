@@ -9,7 +9,7 @@ import tensorflow as tf
 
 import numpy as np
 import time
-from physics_engine import gen
+from physics_engine import gen, make_video
 FLAGS = None
 
 def m(O,Rr,Rs,Ra):
@@ -108,11 +108,12 @@ def train():
   tf.global_variables_initializer().run();
 
   # Data Generation
-  set_num=2000;
+  #set_num=2000;
+  set_num=1;
   total_data=np.zeros((999*set_num,FLAGS.Ds,FLAGS.No),dtype=object);
   total_label=np.zeros((999*set_num,FLAGS.Dp,FLAGS.No),dtype=object);
   for i in range(set_num):
-    raw_data=gen(FLAGS.No,False);
+    raw_data=gen(FLAGS.No,True);
     data=np.zeros((999,FLAGS.Ds,FLAGS.No),dtype=object);
     label=np.zeros((999,FLAGS.Dp,FLAGS.No),dtype=object);
     for j in range(1000-1):
@@ -121,8 +122,10 @@ def train():
     total_label[i*999:(i+1)*999,:]=label;
 
   # Shuffle
-  tr_data_num=1000000;
-  val_data_num=200000;
+  #tr_data_num=1000000;
+  #val_data_num=200000;
+  tr_data_num=400;
+  val_data_num=300;
   total_idx=range(len(total_data));np.random.shuffle(total_idx);
   mixed_data=total_data[total_idx];
   mixed_label=total_label[total_idx];
@@ -149,7 +152,8 @@ def train():
         cnt+=1;
 
   # Training
-  for i in range(2000):
+  max_epoches=2000;
+  for i in range(max_epoches):
     for j in range(int(len(train_data)/mini_batch_num)):
       batch_data=train_data[j*mini_batch_num:(j+1)*mini_batch_num];
       batch_label=train_label[j*mini_batch_num:(j+1)*mini_batch_num];
@@ -160,6 +164,23 @@ def train():
       batch_label=val_label[j*mini_batch_num:(j+1)*mini_batch_num];
       val_loss+=sess.run(loss,feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
     print("Epoch "+str(i+1)+" Validation MSE: "+str(val_loss/(j+1)));
+
+  # Make Video
+  frame_len=250;
+  raw_data=gen(FLAGS.No,True);
+  xy_origin=raw_data[:frame_len,:,1:3];
+  estimated_data=np.zeros((frame_len,FLAGS.No,FLAGS.Ds),dtype=float);
+  estimated_data[0]=raw_data[0];
+  for i in range(1,frame_len):
+    velocities=sess.run(P,feed_dict={O:[np.transpose(estimated_data[i-1])],Rr:[Rr_data[0]],Rs:[Rs_data[0]],Ra:[Ra_data[0]],X:[X_data[0]]})[0];
+    estimated_data[i,:,0]=estimated_data[i-1][:,0];
+    estimated_data[i,:,3:5]=np.transpose(velocities);
+    estimated_data[i,:,1:3]=estimated_data[i-1,:,1:3]+estimated_data[i,:,3:5]*0.001;
+  xy_estimated=estimated_data[:,:,1:3];
+  print("Video Recording");
+  make_video(xy_origin,"true.mp4");
+  make_video(xy_estimated,"modeling.mp4");
+  
       
 def main(_):
   FLAGS.log_dir+=str(int(time.time()));
