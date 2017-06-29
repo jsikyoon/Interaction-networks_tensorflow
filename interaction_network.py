@@ -159,12 +159,12 @@ def train():
   # Normalization
   weights_list=np.sort(np.reshape(train_data[:,0,:],[1,tr_data_num*FLAGS.No])[0]);
   weights_median=weights_list[int(len(weights_list)*0.5)];
-  weights_min=weights_list[int(len(weights_list)*0.05)];
-  weights_max=weights_list[int(len(weights_list)*0.95)];
+  weights_min=weights_list[int(len(weights_list)*0)];
+  weights_max=weights_list[int(len(weights_list)*1)-1];
   position_list=np.sort(np.reshape(train_data[:,1:3,:],[1,tr_data_num*FLAGS.No*2])[0]);
   position_median=position_list[int(len(position_list)*0.5)];
-  position_min=position_list[int(len(position_list)*0.05)];
-  position_max=position_list[int(len(position_list)*0.95)];
+  position_min=position_list[int(len(position_list)*0)];
+  position_max=position_list[int(len(position_list)*1)-1];
   velocity_list=np.sort(np.reshape(train_data[:,3:5,:],[1,tr_data_num*FLAGS.No*2])[0]);
   velocity_median=velocity_list[int(len(velocity_list)*0.5)];
   velocity_min=velocity_list[int(len(velocity_list)*0)];
