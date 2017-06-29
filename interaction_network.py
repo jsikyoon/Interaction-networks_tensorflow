@@ -13,7 +13,8 @@ from physics_engine import gen, make_video
 FLAGS = None
 
 def m(O,Rr,Rs,Ra):
-  return tf.concat([tf.matmul(O,Rr),tf.matmul(O,Rs),Ra],1);
+  #return tf.concat([(tf.matmul(O,Rr)-tf.matmul(O,Rs)),Ra],1);
+  return tf.concat([(tf.matmul(O,Rr),tf.matmul(O,Rs)),Ra],1);
 
   
 def phi_R(B):
@@ -41,6 +42,8 @@ def phi_R(B):
 
 def a(O,Rr,X,E):
   E_bar=tf.matmul(E,tf.transpose(Rr,[0,2,1]));
+  #O_2=tf.stack(tf.unstack(O,FLAGS.Ds,1)[3:5],1);
+  #return (tf.concat([O_2,X,E_bar],1));
   return (tf.concat([O,X,E_bar],1));
 
 def phi_O(C):
@@ -99,10 +102,10 @@ def train():
   # loss and optimizer
   params_list=tf.global_variables();
   mse=tf.reduce_mean(tf.reduce_sum(tf.square(P-P_label),[1,2]));
-  loss = mse+0.0001*tf.nn.l2_loss(E);
+  loss = mse+0.001*tf.nn.l2_loss(E);
   for i in params_list:
-    loss+=0.00001*tf.nn.l2_loss(i);
-  optimizer = tf.train.AdamOptimizer(0.00001);
+    loss+=0.001*tf.nn.l2_loss(i);
+  optimizer = tf.train.AdamOptimizer(0.001);
   trainer=optimizer.minimize(loss);
   
   # tensorboard
@@ -114,7 +117,7 @@ def train():
   tf.global_variables_initializer().run();
 
   # Data Generation
-  set_num=10;
+  set_num=1;
   #set_num=2000;
   total_data=np.zeros((999*set_num,FLAGS.Ds,FLAGS.No),dtype=object);
   total_label=np.zeros((999*set_num,FLAGS.Dp,FLAGS.No),dtype=object);
@@ -127,6 +130,7 @@ def train():
     total_data[i*999:(i+1)*999,:]=data;
     total_label[i*999:(i+1)*999,:]=label;
 
+  """
   # Shuffle
   tr_data_num=1000*(set_num-1);
   val_data_num=300*(set_num-1);
@@ -142,7 +146,16 @@ def train():
   val_label=mixed_label[tr_data_num:tr_data_num+val_data_num];
   test_data=mixed_data[tr_data_num+val_data_num:];
   test_label=mixed_label[tr_data_num+val_data_num:];
- 
+  """
+  train_data=total_data;
+  train_label=total_label;
+  val_data=total_data;
+  val_label=total_label;
+  test_data=total_data;
+  test_label=total_label;
+  tr_data_num=len(train_data);
+  val_data_num=len(val_data);
+
   # Normalization
   weights_list=np.sort(np.reshape(train_data[:,0,:],[1,tr_data_num*FLAGS.No])[0]);
   weights_median=weights_list[int(len(weights_list)*0.5)];
@@ -187,7 +200,7 @@ def train():
         cnt+=1;
 
   # Training
-  max_epoches=2000;
+  max_epoches=20000;
   for i in range(max_epoches):
     tr_loss=0;
     for j in range(int(len(train_data)/mini_batch_num)):
@@ -199,14 +212,15 @@ def train():
     for j in range(int(len(val_data)/mini_batch_num)):
       batch_data=val_data[j*mini_batch_num:(j+1)*mini_batch_num];
       batch_label=val_label[j*mini_batch_num:(j+1)*mini_batch_num];
-      summary,val_loss_part=sess.run([merged,mse],feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
+      #summary,val_loss_part=sess.run([merged,mse],feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
+      val_loss_part=sess.run(mse,feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
       val_loss+=val_loss_part;
-      writer.add_summary(summary,(i*(int(len(val_data)/mini_batch_num))));
+      #writer.add_summary(summary,(i*(int(len(val_data)/mini_batch_num))));
     print("Epoch "+str(i+1)+" Training MSE: "+str(tr_loss/(int(len(train_data)/mini_batch_num)))+" Validation MSE: "+str(val_loss/(j+1)));
   
   # Make Video
   frame_len=300;
-  raw_data=gen(FLAGS.No,True);
+  #raw_data=gen(FLAGS.No,True);
   xy_origin=raw_data[:frame_len,:,1:3];
   estimated_data=np.zeros((frame_len,FLAGS.No,FLAGS.Ds),dtype=float);
   estimated_data[0]=raw_data[0];
@@ -216,12 +230,11 @@ def train():
   for i in range(1,frame_len):
     velocities=sess.run(P,feed_dict={O:[np.transpose(estimated_data[i-1])],Rr:[Rr_data[0]],Rs:[Rs_data[0]],Ra:[Ra_data[0]],X:[X_data[0]]})[0];
     estimated_data[i,:,0]=estimated_data[i-1][:,0];
-    estimated_data[i,:,3:5]=np.transpose(velocities);
-    estimated_data[i,:,1:3]=estimated_data[i-1,:,1:3]+estimated_data[i,:,3:5]*0.001;
-    estimated_data[i,:,0]=(estimated_data[i,:,0]-weights_median)*(2/(weights_max-weights_min));
+    estimated_data[i,:,3:5]=np.transpose(velocities*(velocity_max-velocity_min)/2+velocity_median);
+    estimated_data[i,:,1:3]=(estimated_data[i-1,:,1:3]*(position_max-position_min)/2+position_median)+estimated_data[i,:,3:5]*0.001;
     estimated_data[i,:,1:3]=(estimated_data[i,:,1:3]-position_median)*(2/(position_max-position_min));
     estimated_data[i,:,3:5]=(estimated_data[i,:,3:5]-velocity_median)*(2/(velocity_max-velocity_min));
-  xy_estimated=estimated_data[:,:,1:3];
+  xy_estimated=estimated_data[:,:,1:3]*(position_max-position_min)/2+position_median;
   print("Video Recording");
   make_video(xy_origin,"true.mp4");
   make_video(xy_estimated,"modeling.mp4");
@@ -241,7 +254,7 @@ if __name__ == '__main__':
                       help='Summaries log directry')
   parser.add_argument('--Ds', type=int, default=5,
                       help='The State Dimention')
-  parser.add_argument('--No', type=int, default=6,
+  parser.add_argument('--No', type=int, default=2,
                       help='The Number of Objects')
   parser.add_argument('--Nr', type=int, default=30,
                       help='The Number of Relations')

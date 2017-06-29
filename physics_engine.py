@@ -36,8 +36,8 @@ def init(total_state,n_body,fea_num,orbit):
       theta_rad = pi/2 - radians(theta);    
       data[0][i][1]=distance*cos(theta_rad);
       data[0][i][2]=distance*sin(theta_rad);
-      data[0][i][3]=-1*data[0][i][2]/norm(data[0][i][1:3])*(G*data[0][0][0]/distance**2)*0.05;
-      data[0][i][4]=data[0][i][1]/norm(data[0][i][1:3])*(G*data[0][0][0]/distance**2)*0.05;
+      data[0][i][3]=-1*data[0][i][2]/norm(data[0][i][1:3])*(G*data[0][0][0]/norm(data[0][i][1:3])**2)*distance/1000;
+      data[0][i][4]=data[0][i][1]/norm(data[0][i][1:3])*(G*data[0][0][0]/norm(data[0][i][1:3])**2)*distance/1000;
       #data[0][i][3]=np.random.rand()*10.0-5.0;
       #data[0][i][4]=np.random.rand()*10.0-5.0;
   else:
