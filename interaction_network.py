@@ -14,7 +14,7 @@ FLAGS = None
 
 def m(O,Rr,Rs,Ra):
   #return tf.concat([(tf.matmul(O,Rr)-tf.matmul(O,Rs)),Ra],1);
-  return tf.concat([(tf.matmul(O,Rr),tf.matmul(O,Rs)),Ra],1);
+  return tf.concat([tf.matmul(O,Rr),tf.matmul(O,Rs),Ra],1);
 
   
 def phi_R(B):
@@ -167,8 +167,8 @@ def train():
   position_max=position_list[int(len(position_list)*0.95)];
   velocity_list=np.sort(np.reshape(train_data[:,3:5,:],[1,tr_data_num*FLAGS.No*2])[0]);
   velocity_median=velocity_list[int(len(velocity_list)*0.5)];
-  velocity_min=velocity_list[int(len(velocity_list)*0.05)];
-  velocity_max=velocity_list[int(len(velocity_list)*0.95)];
+  velocity_min=velocity_list[int(len(velocity_list)*0)];
+  velocity_max=velocity_list[int(len(velocity_list)*1)-1];
 
   train_data[:,0,:]=(train_data[:,0,:]-weights_median)*(2/(weights_max-weights_min));
   train_data[:,1:3,:]=(train_data[:,1:3,:]-position_median)*(2/(position_max-position_min));
@@ -185,7 +185,7 @@ def train():
   test_data[:,3:5,:]=(test_data[:,3:5,:]-velocity_median)*(2/(velocity_max-velocity_min));
   test_label=(test_label-velocity_median)*(2/(velocity_max-velocity_min));
 
-  mini_batch_num=100;
+  mini_batch_num=tr_data_num;
   # Set Rr_data, Rs_data, Ra_data and X_data
   Rr_data=np.zeros((mini_batch_num,FLAGS.No,FLAGS.Nr),dtype=float);
   Rs_data=np.zeros((mini_batch_num,FLAGS.No,FLAGS.Nr),dtype=float);
@@ -200,7 +200,7 @@ def train():
         cnt+=1;
 
   # Training
-  max_epoches=20000;
+  max_epoches=2000;
   for i in range(max_epoches):
     tr_loss=0;
     for j in range(int(len(train_data)/mini_batch_num)):
