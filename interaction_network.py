@@ -98,17 +98,19 @@ def train():
 
   # loss and optimizer
   params_list=tf.global_variables();
-  loss = tf.nn.l2_loss(P-P_label)+0.001*tf.nn.l2_loss(E);
+  mse=tf.reduce_mean(tf.square(P-P_label));
+  loss = mse+0.0001*tf.nn.l2_loss(E);
   for i in params_list:
-    loss+=0.001*tf.nn.l2_loss(i);
-  optimizer = tf.train.AdamOptimizer(0.001);
+    loss+=0.00001*tf.nn.l2_loss(i);
+  optimizer = tf.train.AdamOptimizer(0.00001);
   trainer=optimizer.minimize(loss);
 
   sess=tf.InteractiveSession();
   tf.global_variables_initializer().run();
 
   # Data Generation
-  set_num=2000;
+  set_num=4;
+  #set_num=2000;
   total_data=np.zeros((999*set_num,FLAGS.Ds,FLAGS.No),dtype=object);
   total_label=np.zeros((999*set_num,FLAGS.Dp,FLAGS.No),dtype=object);
   for i in range(set_num):
@@ -121,8 +123,10 @@ def train():
     total_label[i*999:(i+1)*999,:]=label;
 
   # Shuffle
-  tr_data_num=1000000;
-  val_data_num=200000;
+  tr_data_num=3500;
+  val_data_num=300;
+  #tr_data_num=1000000;
+  #val_data_num=200000;
   total_idx=range(len(total_data));np.random.shuffle(total_idx);
   mixed_data=total_data[total_idx];
   mixed_label=total_label[total_idx];
@@ -133,7 +137,7 @@ def train():
   val_label=mixed_label[tr_data_num:tr_data_num+val_data_num];
   test_data=mixed_data[tr_data_num+val_data_num:];
   test_label=mixed_label[tr_data_num+val_data_num:];
-
+ 
   # Normalization
   weights_list=np.sort(np.reshape(train_data[:,0,:],[1,tr_data_num*FLAGS.No])[0]);
   weights_median=weights_list[int(len(weights_list)*0.5)];
@@ -159,7 +163,7 @@ def train():
   test_data[:,0,:]=(test_data[:,0,:]-weights_median)*(2/(weights_max-weights_min));
   test_data[:,1:3,:]=(test_data[:,1:3,:]-position_median)*(2/(position_max-position_min));
   test_data[:,3:5,:]=(test_data[:,3:5,:]-velocity_median)*(2/(velocity_max-velocity_min));
-  
+
   mini_batch_num=100;
   # Set Rr_data, Rs_data, Ra_data and X_data
   Rr_data=np.zeros((mini_batch_num,FLAGS.No,FLAGS.Nr),dtype=float);
@@ -177,17 +181,19 @@ def train():
   # Training
   max_epoches=2000;
   for i in range(max_epoches):
+    tr_loss=0;
     for j in range(int(len(train_data)/mini_batch_num)):
       batch_data=train_data[j*mini_batch_num:(j+1)*mini_batch_num];
       batch_label=train_label[j*mini_batch_num:(j+1)*mini_batch_num];
-      sess.run(trainer,feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
+      tr_loss_part,_=sess.run([mse,trainer],feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
+      tr_loss+=tr_loss_part;
     val_loss=0;
     for j in range(int(len(val_data)/mini_batch_num)):
       batch_data=val_data[j*mini_batch_num:(j+1)*mini_batch_num];
       batch_label=val_label[j*mini_batch_num:(j+1)*mini_batch_num];
-      val_loss+=sess.run(loss,feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
-    print("Epoch "+str(i+1)+" Validation MSE: "+str(val_loss/(j+1)));
-
+      val_loss+=sess.run(mse,feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
+    print("Epoch "+str(i+1)+" Training MSE: "+str(tr_loss/(int(len(train_data)/mini_batch_num)))+" Validation MSE: "+str(val_loss/(j+1)));
+  """
   # Make Video
   frame_len=300;
   raw_data=gen(FLAGS.No,True);
@@ -203,7 +209,7 @@ def train():
   print("Video Recording");
   make_video(xy_origin,"true.mp4");
   make_video(xy_estimated,"modeling.mp4");
-  
+  """
       
 def main(_):
   FLAGS.log_dir+=str(int(time.time()));
