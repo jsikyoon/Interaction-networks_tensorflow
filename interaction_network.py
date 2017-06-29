@@ -114,7 +114,7 @@ def train():
   tf.global_variables_initializer().run();
 
   # Data Generation
-  set_num=1000;
+  set_num=10;
   #set_num=2000;
   total_data=np.zeros((999*set_num,FLAGS.Ds,FLAGS.No),dtype=object);
   total_label=np.zeros((999*set_num,FLAGS.Dp,FLAGS.No),dtype=object);
@@ -203,23 +203,29 @@ def train():
       val_loss+=val_loss_part;
       writer.add_summary(summary,(i*(int(len(val_data)/mini_batch_num))));
     print("Epoch "+str(i+1)+" Training MSE: "+str(tr_loss/(int(len(train_data)/mini_batch_num)))+" Validation MSE: "+str(val_loss/(j+1)));
-  """
+  
   # Make Video
   frame_len=300;
   raw_data=gen(FLAGS.No,True);
   xy_origin=raw_data[:frame_len,:,1:3];
   estimated_data=np.zeros((frame_len,FLAGS.No,FLAGS.Ds),dtype=float);
   estimated_data[0]=raw_data[0];
+  estimated_data[0,:,0]=(estimated_data[0,:,0]-weights_median)*(2/(weights_max-weights_min));
+  estimated_data[0,:,1:3]=(estimated_data[0,:,1:3]-position_median)*(2/(position_max-position_min));
+  estimated_data[0,:,3:5]=(estimated_data[0,:,3:5]-velocity_median)*(2/(velocity_max-velocity_min));
   for i in range(1,frame_len):
     velocities=sess.run(P,feed_dict={O:[np.transpose(estimated_data[i-1])],Rr:[Rr_data[0]],Rs:[Rs_data[0]],Ra:[Ra_data[0]],X:[X_data[0]]})[0];
     estimated_data[i,:,0]=estimated_data[i-1][:,0];
     estimated_data[i,:,3:5]=np.transpose(velocities);
     estimated_data[i,:,1:3]=estimated_data[i-1,:,1:3]+estimated_data[i,:,3:5]*0.001;
+    estimated_data[i,:,0]=(estimated_data[i,:,0]-weights_median)*(2/(weights_max-weights_min));
+    estimated_data[i,:,1:3]=(estimated_data[i,:,1:3]-position_median)*(2/(position_max-position_min));
+    estimated_data[i,:,3:5]=(estimated_data[i,:,3:5]-velocity_median)*(2/(velocity_max-velocity_min));
   xy_estimated=estimated_data[:,:,1:3];
   print("Video Recording");
   make_video(xy_origin,"true.mp4");
   make_video(xy_estimated,"modeling.mp4");
-  """
+  
       
 def main(_):
   FLAGS.log_dir+=str(int(time.time()));
