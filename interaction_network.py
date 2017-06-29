@@ -98,18 +98,23 @@ def train():
 
   # loss and optimizer
   params_list=tf.global_variables();
-  mse=tf.reduce_mean(tf.square(P-P_label));
+  mse=tf.reduce_mean(tf.reduce_sum(tf.square(P-P_label),[1,2]));
   loss = mse+0.0001*tf.nn.l2_loss(E);
   for i in params_list:
     loss+=0.00001*tf.nn.l2_loss(i);
   optimizer = tf.train.AdamOptimizer(0.00001);
   trainer=optimizer.minimize(loss);
+  
+  # tensorboard
+  tf.summary.scalar('mse',mse);
+  merged=tf.summary.merge_all();
+  writer=tf.summary.FileWriter(FLAGS.log_dir);
 
   sess=tf.InteractiveSession();
   tf.global_variables_initializer().run();
 
   # Data Generation
-  set_num=4;
+  set_num=10;
   #set_num=2000;
   total_data=np.zeros((999*set_num,FLAGS.Ds,FLAGS.No),dtype=object);
   total_label=np.zeros((999*set_num,FLAGS.Dp,FLAGS.No),dtype=object);
@@ -123,7 +128,7 @@ def train():
     total_label[i*999:(i+1)*999,:]=label;
 
   # Shuffle
-  tr_data_num=3500;
+  tr_data_num=9000;
   val_data_num=300;
   #tr_data_num=1000000;
   #val_data_num=200000;
@@ -185,7 +190,12 @@ def train():
     for j in range(int(len(train_data)/mini_batch_num)):
       batch_data=train_data[j*mini_batch_num:(j+1)*mini_batch_num];
       batch_label=train_label[j*mini_batch_num:(j+1)*mini_batch_num];
-      tr_loss_part,_=sess.run([mse,trainer],feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
+      if(j==0):
+        summary,tr_loss_part,_=sess.run([merged,mse,trainer],feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
+        writer.add_summary(summary,(i*int(len(train_data)/mini_batch_num)));
+      else:
+        tr_loss_part,_=sess.run([mse,trainer],feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
+   
       tr_loss+=tr_loss_part;
     val_loss=0;
     for j in range(int(len(val_data)/mini_batch_num)):
