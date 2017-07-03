@@ -49,7 +49,7 @@ Except above three things, other settings are same to paper as followed.
 For \phi_R function, 4 hidden layers MLP with 150 nodes, ReLU activation function for hidden layers, linear ones for output layer and D_E=50 settings are used.
 For \phi_O function, 1 hidden layers MLP with 100 nodes, ReLU for hidden layer, linear for output layer and D_P=2 settings are used.
 Adam Optimizer is used with 0.001 learning rate.
-L2-regularization is used for matrix E and all parameters.
+L2-regularization is used for matrix E and all parameters (lambda values for each regularization are 0.001).
 
 For 2-object experiment, I generated 10 samples, which have 1000 frames, and 90%/10% data are used for training and validation. For qualititive measure, I newly generated 1 sample and made video files for preidiction from model and true ones.
 
