@@ -102,6 +102,6 @@ def make_video(xy,filename):
       writer.grab_frame();
 
 if __name__=='__main__':
-  data=gen(2,True);
+  data=gen(3,True);
   xy=data[:,:,1:3];
   make_video(xy,"test.mp4");
