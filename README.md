@@ -26,7 +26,13 @@ python interaction_network.py
 `
 
 ### Data
-Data are gathered from implemented physics engine (physics_engine.py), which by using given the number of objects initializes and processes random weights[0.2-9kg], distance[10-100m] and angle[0-360] same as the paper settings. Currently orbit system is not implemented yet, the experiments on here are gone with not orbit system (no central biggest object).
+Data are gathered from implemented physics engine (physics_engine.py), which by using given the number of objects initializes and processes random weights[0.2-9kg], distance[10-100m] and angle[0-360] same as the paper settings.
+Orbit system is implemented 0-th really big object in central (100kg, same to paper), and velocities of other objects are initialized as supporting stable status.
+Object state values of non-orbit system are randomly initialzed as above.
+
+Before traing that, the data (not label!) is initialized as bellowed (same to the paper).
+median value is going to 0, and 5% and 95% data are going to -1 and 1, respectively.
+This initialization is processed differently for mass, positions and velocities.
 
 ### Settings
 Almost settings are same to the paper, which is clearly written for that except bellowed. 
@@ -34,6 +40,9 @@ Almost settings are same to the paper, which is clearly written for that except 
 For state, there no description, and I used 5-D vector [mass,x_position,y_position,x_velocity,y_velocity].
 For R_a and X, there are no description for n-body test, thus I used zero-array with D_R=1, D_X=1.
 For D_P, descriptions in page 6 are different, (for f_O, D_P=2, and for \phi_A, D_P=10) in my implementation, I used D_P=2 (x and y velocities).
+(I checked that with 1st Author of this paper, Peter W. Battaglia, D_P is used as 10 for estimating potiential energy, and 2 for estimating next state.)
+For b_k, descriptions in implementation is to concatenate OR_r and OR_s, however in model architecture, that is described to difference vector between them. In my implementation, I used difference vector.
+For input of function a, descriptions in implementation is to object matrix O, however in model architecture, that is described to just use velocities as input. In my implementation, I just used velocities as input.
 
 Except above three things, other settings are same to paper as followed.
 
@@ -42,7 +51,14 @@ For \phi_O function, 1 hidden layers MLP with 100 nodes, ReLU for hidden layer, 
 Adam Optimizer is used with 0.001 learning rate.
 L2-regularization is used for matrix E and all parameters.
 
-### Results
-Currently, in progress of training, validation mse is less than 0.05. That is better than the paper results, for which, I assume state or D_P settings are different to original ones.
+For 2-object experiment, I generated 10 samples, which have 1000 frames, and 90%/10% data are used for training and validation. For qualititive measure, I newly generated 1 sample and made video files for preidiction from model and true ones.
 
-After finishing training, I will upload exact results with qualititive ones.
+I did not use Random noise when traning and balancing in batch.
+
+### Results
+
+![alt tag](https://github.com/jaesik817/Interaction-networks_tensorflow/blob/master/figures/gravity_object_2.PNG)
+
+The experiment is 2-object.
+
+The validation MSE has been saturated to about 0.2~0.3, and video generated new data (not training ones!) is quitely good.

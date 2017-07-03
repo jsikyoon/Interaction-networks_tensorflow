@@ -118,7 +118,6 @@ def train():
   for i in range(len(params_list)):
     variable_summaries(params_list[i],i);
   mse=tf.reduce_mean(tf.reduce_mean(tf.square(P-P_label),[1,2]));
-  #mse=tf.reduce_mean(tf.square(P-P_label),[1,2]);
   loss = 0.001*tf.nn.l2_loss(E);
   for i in params_list:
     loss+=0.001*tf.nn.l2_loss(i);
@@ -148,10 +147,8 @@ def train():
     total_label[i*999:(i+1)*999,:]=label;
 
   # Shuffle
-  tr_data_num=1000*(set_num-1);
-  val_data_num=500*(set_num-1);
-  #tr_data_num=1000000;
-  #val_data_num=200000;
+  tr_data_num=999*(set_num-1);
+  val_data_num=999;
   total_idx=range(len(total_data));np.random.shuffle(total_idx);
   mixed_data=total_data[total_idx];
   mixed_label=total_label[total_idx];
@@ -162,19 +159,6 @@ def train():
   val_label=mixed_label[tr_data_num:tr_data_num+val_data_num];
   test_data=mixed_data[tr_data_num+val_data_num:];
   test_label=mixed_label[tr_data_num+val_data_num:];
-  """
-  total_idx=range(len(total_data));np.random.shuffle(total_idx);
-  total_data=total_data[total_idx];
-  total_label=total_label[total_idx];
-  train_data=total_data;
-  train_label=total_label;
-  val_data=total_data;
-  val_label=total_label;
-  test_data=total_data;
-  test_label=total_label;
-  tr_data_num=len(train_data);
-  val_data_num=len(val_data);
-  """
 
   # Normalization
   weights_list=np.sort(np.reshape(train_data[:,0,:],[1,tr_data_num*FLAGS.No])[0]);
@@ -193,25 +177,14 @@ def train():
   train_data[:,0,:]=(train_data[:,0,:]-weights_median)*(2/(weights_max-weights_min));
   train_data[:,1:3,:]=(train_data[:,1:3,:]-position_median)*(2/(position_max-position_min));
   train_data[:,3:5,:]=(train_data[:,3:5,:]-velocity_median)*(2/(velocity_max-velocity_min));
-  #train_label=(train_label-velocity_median)*(2/(velocity_max-velocity_min));
-
-  """
-  # label data clustering
-  center_label=np.zeros(len(train_label),dtype=int);
-  tmp=np.reshape(train_label,[-1,FLAGS.No*2]);
-  kmeans=KMeans(n_clusters=100,random_state=0).fit(tmp);
-  center_label=kmeans.labels_;
-  """
 
   val_data[:,0,:]=(val_data[:,0,:]-weights_median)*(2/(weights_max-weights_min));
   val_data[:,1:3,:]=(val_data[:,1:3,:]-position_median)*(2/(position_max-position_min));
   val_data[:,3:5,:]=(val_data[:,3:5,:]-velocity_median)*(2/(velocity_max-velocity_min));
-  #val_label=(val_label-velocity_median)*(2/(velocity_max-velocity_min));
   
   test_data[:,0,:]=(test_data[:,0,:]-weights_median)*(2/(weights_max-weights_min));
   test_data[:,1:3,:]=(test_data[:,1:3,:]-position_median)*(2/(position_max-position_min));
   test_data[:,3:5,:]=(test_data[:,3:5,:]-velocity_median)*(2/(velocity_max-velocity_min));
-  #test_label=(test_label-velocity_median)*(2/(velocity_max-velocity_min));
 
   mini_batch_num=100;
   # Set Rr_data, Rs_data, Ra_data and X_data
@@ -235,14 +208,6 @@ def train():
     train_label=train_label[train_idx];
     tr_loss=0;
     for j in range(int(len(train_data)/mini_batch_num)):
-      """
-      idx_list=[];
-      for k in range(mini_batch_num):
-        tmp=np.where(center_label==k)[0];np.random.shuffle(tmp);
-        idx_list+=[tmp[0]];
-      batch_data=train_data[idx_list];
-      batch_label=train_label[idx_list];
-      """
       batch_data=train_data[j*mini_batch_num:(j+1)*mini_batch_num];
       batch_label=train_label[j*mini_batch_num:(j+1)*mini_batch_num];
       if(j==0):
@@ -261,7 +226,7 @@ def train():
   
   # Make Video
   frame_len=300;
-  #raw_data=gen(FLAGS.No,True);
+  raw_data=gen(FLAGS.No,True);
   xy_origin=copy.deepcopy(raw_data[:frame_len,:,1:3]);
   estimated_data=np.zeros((frame_len,FLAGS.No,FLAGS.Ds),dtype=float);
   raw_data[:,:,0]=(raw_data[:,:,0]-weights_median)*(2/(weights_max-weights_min));
@@ -271,21 +236,14 @@ def train():
   for i in range(1,frame_len):
     velocities=sess.run(P,feed_dict={O:[np.transpose(raw_data[i-1])],Rr:[Rr_data[0]],Rs:[Rs_data[0]],Ra:[Ra_data[0]],X:[X_data[0]]})[0];
     estimated_data[i,:,0]=estimated_data[i-1][:,0];
-    #estimated_data[i,:,3:5]=np.transpose(velocities*(velocity_max-velocity_min)/2+velocity_median);
     estimated_data[i,:,3:5]=np.transpose(velocities);
     estimated_data[i,:,1:3]=(estimated_data[i-1,:,1:3]*(position_max-position_min)/2+position_median)+estimated_data[i,:,3:5]*0.001;
     estimated_data[i,:,1:3]=(estimated_data[i,:,1:3]-position_median)*(2/(position_max-position_min));
-    #estimated_data[i,:,3:5]=(estimated_data[i,:,3:5]-velocity_median)*(2/(velocity_max-velocity_min));
-    #print(np.transpose(velocities*(velocity_max-velocity_min)/2+velocity_median));
-    #print(velocities);
-    #print(xy_origin[i]);
-    #print(raw_data[i,:,1:3]);
-    #print("===");
   xy_estimated=estimated_data[:,:,1:3]*(position_max-position_min)/2+position_median;
   print("Video Recording");
   make_video(xy_origin,"true"+str(time.time())+".mp4");
   make_video(xy_estimated,"modeling"+str(time.time())+".mp4");
-  
+  print("Done");
       
 def main(_):
   FLAGS.log_dir+=str(int(time.time()));
