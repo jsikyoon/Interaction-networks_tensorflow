@@ -57,7 +57,10 @@ def norm(x):
 
 def get_f(reciever,sender):
   diff=sender[1:3]-reciever[1:3];
-  return G*reciever[0]*sender[0]/(norm(diff)**3)*diff;
+  distance=norm(diff);
+  if(distance<1):
+    distance=1;
+  return G*reciever[0]*sender[0]/(distance**3)*diff;
  
 def calc(cur_state,n_body):
   next_state=np.zeros((n_body,fea_num),dtype=float);

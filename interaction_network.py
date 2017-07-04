@@ -133,7 +133,7 @@ def train():
   tf.global_variables_initializer().run();
 
   # Data Generation
-  set_num=10;
+  set_num=2;
   #set_num=2000;
   total_data=np.zeros((999*set_num,FLAGS.Ds,FLAGS.No),dtype=object);
   total_label=np.zeros((999*set_num,FLAGS.Dp,FLAGS.No),dtype=object);
@@ -203,25 +203,28 @@ def train():
   # Training
   max_epoches=2000*20;
   for i in range(max_epoches):
-    train_idx=range(len(train_data));np.random.shuffle(train_idx);
-    train_data=train_data[train_idx];
-    train_label=train_label[train_idx];
     tr_loss=0;
     for j in range(int(len(train_data)/mini_batch_num)):
       batch_data=train_data[j*mini_batch_num:(j+1)*mini_batch_num];
       batch_label=train_label[j*mini_batch_num:(j+1)*mini_batch_num];
-      if(j==0):
-        summary,tr_loss_part,_=sess.run([merged,mse,trainer],feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
-        writer.add_summary(summary,i);
-      else:
-        tr_loss_part,_=sess.run([mse,trainer],feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
+      tr_loss_part,_=sess.run([mse,trainer],feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
       tr_loss+=tr_loss_part;
+    train_idx=range(len(train_data));np.random.shuffle(train_idx);
+    train_data=train_data[train_idx];
+    train_label=train_label[train_idx];
     val_loss=0;
     for j in range(int(len(val_data)/mini_batch_num)):
       batch_data=val_data[j*mini_batch_num:(j+1)*mini_batch_num];
       batch_label=val_label[j*mini_batch_num:(j+1)*mini_batch_num];
-      val_loss_part,estimated=sess.run([mse,P],feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
+      if(j==0):
+        summary,val_loss_part,estimated=sess.run([merged,mse,P],feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
+        writer.add_summary(summary,i);
+      else:
+        val_loss_part,estimated=sess.run([mse,P],feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
       val_loss+=val_loss_part;
+    val_idx=range(len(val_data));np.random.shuffle(val_idx);
+    val_data=val_data[val_idx];
+    val_label=val_label[val_idx];
     print("Epoch "+str(i+1)+" Training MSE: "+str(tr_loss/(int(len(train_data)/mini_batch_num)))+" Validation MSE: "+str(val_loss/(j+1)));
   
   # Make Video
