@@ -133,7 +133,7 @@ def train():
   tf.global_variables_initializer().run();
 
   # Data Generation
-  set_num=2;
+  set_num=10;
   #set_num=2000;
   total_data=np.zeros((999*set_num,FLAGS.Ds,FLAGS.No),dtype=object);
   total_label=np.zeros((999*set_num,FLAGS.Dp,FLAGS.No),dtype=object);
@@ -148,7 +148,9 @@ def train():
 
   # Shuffle
   tr_data_num=999*(set_num-1);
-  val_data_num=999;
+  val_data_num=300;
+  #tr_data_num=1000000;
+  #val_data_num=200000;
   total_idx=range(len(total_data));np.random.shuffle(total_idx);
   mixed_data=total_data[total_idx];
   mixed_label=total_label[total_idx];
@@ -201,7 +203,7 @@ def train():
         cnt+=1;
 
   # Training
-  max_epoches=2000*20;
+  max_epoches=2000*10;
   for i in range(max_epoches):
     tr_loss=0;
     for j in range(int(len(train_data)/mini_batch_num)):
@@ -216,11 +218,11 @@ def train():
     for j in range(int(len(val_data)/mini_batch_num)):
       batch_data=val_data[j*mini_batch_num:(j+1)*mini_batch_num];
       batch_label=val_label[j*mini_batch_num:(j+1)*mini_batch_num];
-      if(j==0):
-        summary,val_loss_part,estimated=sess.run([merged,mse,P],feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
-        writer.add_summary(summary,i);
-      else:
-        val_loss_part,estimated=sess.run([mse,P],feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
+      #if(j==0):
+      #  summary,val_loss_part,estimated=sess.run([merged,mse,P],feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
+      #  writer.add_summary(summary,i);
+      #else:
+      val_loss_part,estimated=sess.run([mse,P],feed_dict={O:batch_data,Rr:Rr_data,Rs:Rs_data,Ra:Ra_data,P_label:batch_label,X:X_data});
       val_loss+=val_loss_part;
     val_idx=range(len(val_data));np.random.shuffle(val_idx);
     val_data=val_data[val_idx];
@@ -236,13 +238,16 @@ def train():
   raw_data[:,:,1:3]=(raw_data[:,:,1:3]-position_median)*(2/(position_max-position_min));
   raw_data[:,:,3:5]=(raw_data[:,:,3:5]-velocity_median)*(2/(velocity_max-velocity_min));
   estimated_data[0]=raw_data[0];
+  ts_loss=0;
   for i in range(1,frame_len):
-    velocities=sess.run(P,feed_dict={O:[np.transpose(raw_data[i-1])],Rr:[Rr_data[0]],Rs:[Rs_data[0]],Ra:[Ra_data[0]],X:[X_data[0]]})[0];
+    ts_loss_part,velocities=sess.run([mse,P],feed_dict={O:[np.transpose(raw_data[i-1])],Rr:[Rr_data[0]],Rs:[Rs_data[0]],Ra:[Ra_data[0]],X:[X_data[0]],P_label:[raw_data[i,:,3:5]*(velocity_max-velocity_min)/2+velocity_median]})[0];
     estimated_data[i,:,0]=estimated_data[i-1][:,0];
     estimated_data[i,:,3:5]=np.transpose(velocities);
     estimated_data[i,:,1:3]=(estimated_data[i-1,:,1:3]*(position_max-position_min)/2+position_median)+estimated_data[i,:,3:5]*0.001;
     estimated_data[i,:,1:3]=(estimated_data[i,:,1:3]-position_median)*(2/(position_max-position_min));
+    ts_loss+=ts_loss_part;
   xy_estimated=estimated_data[:,:,1:3]*(position_max-position_min)/2+position_median;
+  print("Test Loss: "+str(ts_loss));
   print("Video Recording");
   make_video(xy_origin,"true"+str(time.time())+".mp4");
   make_video(xy_estimated,"modeling"+str(time.time())+".mp4");
