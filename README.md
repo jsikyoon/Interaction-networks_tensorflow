@@ -59,8 +59,8 @@ I did not use Random noise when traning and balancing in batch.
 
 ![alt tag](https://github.com/jaesik817/Interaction-networks_tensorflow/blob/master/figures/gravity_object_2.PNG)
 
-The experiments are 2-object and 3-object ones.
+The experiments are 2-object,3-object and 6-object ones.
 
 Above MSE graph is 2-object experiment one.
 
-The validation velocities MSE has been saturated to about 0.2~0.3 and 10 for 2-object and 3-object, and video generated new data (not training ones!) is quitely good.
+The validation velocities MSE has been saturated to about 0.2~0.3,10 and 20,000 for 2-object, 3-object and 6-object, and video generated new data (not training ones!) is quitely good.
