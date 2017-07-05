@@ -203,7 +203,7 @@ def train():
         cnt+=1;
 
   # Training
-  max_epoches=2000*10;
+  max_epoches=2000*20;
   for i in range(max_epoches):
     tr_loss=0;
     for j in range(int(len(train_data)/mini_batch_num)):
@@ -240,7 +240,8 @@ def train():
   estimated_data[0]=raw_data[0];
   ts_loss=0;
   for i in range(1,frame_len):
-    ts_loss_part,velocities=sess.run([mse,P],feed_dict={O:[np.transpose(raw_data[i-1])],Rr:[Rr_data[0]],Rs:[Rs_data[0]],Ra:[Ra_data[0]],X:[X_data[0]],P_label:[raw_data[i,:,3:5]*(velocity_max-velocity_min)/2+velocity_median]})[0];
+    ts_loss_part,velocities=sess.run([mse,P],feed_dict={O:[np.transpose(raw_data[i-1])],Rr:[Rr_data[0]],Rs:[Rs_data[0]],Ra:[Ra_data[0]],X:[X_data[0]],P_label:[np.transpose(raw_data[i,:,3:5]*(velocity_max-velocity_min)/2+velocity_median)]});
+    velocities=velocities[0];
     estimated_data[i,:,0]=estimated_data[i-1][:,0];
     estimated_data[i,:,3:5]=np.transpose(velocities);
     estimated_data[i,:,1:3]=(estimated_data[i-1,:,1:3]*(position_max-position_min)/2+position_median)+estimated_data[i,:,3:5]*0.001;
@@ -267,7 +268,7 @@ if __name__ == '__main__':
                       help='Summaries log directry')
   parser.add_argument('--Ds', type=int, default=5,
                       help='The State Dimention')
-  parser.add_argument('--No', type=int, default=2,
+  parser.add_argument('--No', type=int, default=6,
                       help='The Number of Objects')
   parser.add_argument('--Nr', type=int, default=30,
                       help='The Number of Relations')

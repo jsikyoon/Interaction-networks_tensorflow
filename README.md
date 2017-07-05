@@ -51,7 +51,7 @@ For \phi_O function, 1 hidden layers MLP with 100 nodes, ReLU for hidden layer, 
 Adam Optimizer is used with 0.001 learning rate.
 L2-regularization is used for matrix E and all parameters (lambda values for each regularization are 0.001).
 
-For 2-object experiment, I generated 10 samples, which have 1000 frames, and 90%/10% data are used for training and validation. For qualititive measure, I newly generated 1 sample and made video files for preidiction from model and true ones.
+I generated 10 samples, which have 1000 frames, and 90%/10% data are used for training and validation. For qualititive measure, I newly generated 1 sample and made video files for preidiction from model and true ones.
 
 I did not use Random noise when traning and balancing in batch.
 
@@ -59,6 +59,6 @@ I did not use Random noise when traning and balancing in batch.
 
 ![alt tag](https://github.com/jaesik817/Interaction-networks_tensorflow/blob/master/figures/gravity_object_2.PNG)
 
-The experiment is 2-object.
+The experiment is 2-object and 3-object ones.
 
-The validation MSE has been saturated to about 0.2~0.3, and video generated new data (not training ones!) is quitely good.
+The validation velocities MSE has been saturated to about 0.2~0.3 and 10 for 2-object and 3-object, and video generated new data (not training ones!) is quitely good.
