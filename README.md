@@ -51,7 +51,7 @@ For \phi_O function, 1 hidden layers MLP with 100 nodes, ReLU for hidden layer, 
 Adam Optimizer is used with 0.001 learning rate.
 L2-regularization is used for matrix E and all parameters (lambda values for each regularization are 0.001).
 
-I generated 10 samples, which have 1000 frames, and 90%/10% data are used for training and validation. For qualititive measure, I newly generated 1 sample and made video files for preidiction from model and true ones.
+I generated 10 samples, which have 1000 frames, and 90%/10% data are used for training and validation. Max epoch is 40,000. For qualititive measure, I newly generated 1 sample and made video files for preidiction from model and true ones.
 
 I did not use Random noise when traning and balancing in batch.
 
